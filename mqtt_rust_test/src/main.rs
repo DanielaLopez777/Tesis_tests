@@ -1,18 +1,25 @@
 use rumqttc::{AsyncClient, Event, MqttOptions, Packet, QoS};
-use std::{env, time::{Duration, Instant}};
-use tokio::{task, time::sleep};
-use std::sync::{
-    Arc,
-    atomic::{AtomicBool, Ordering},
+use std::{
+    env,
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc,
+    },
+    time::{Duration, Instant},
 };
+use tokio::{task, time::sleep};
 
 #[tokio::main]
 async fn main() {
 
+    // ======================
+    // ARGUMENTOS (OWNED VALUES)
+    // ======================
+
     let args: Vec<String> = env::args().collect();
 
-    let mode = &args[1];
-    let id = &args[2];
+    let mode = args[1].clone();
+    let id = args[2].clone();
 
     // ======================
     // MQTT OPTIONS
@@ -28,20 +35,22 @@ async fn main() {
     let connected = Arc::new(AtomicBool::new(false));
     let connected_clone = connected.clone();
 
+    let id_clone = id.clone();
+
     // ======================
-    // EVENT LOOP (OBLIGATORIO)
+    // EVENT LOOP TASK
     // ======================
 
     task::spawn(async move {
         loop {
             match eventloop.poll().await {
                 Ok(Event::Incoming(Packet::ConnAck(_))) => {
-                    println!("Client {} connected", id);
+                    println!("Client {} connected", id_clone);
                     connected_clone.store(true, Ordering::Relaxed);
                 }
                 Ok(_) => {}
                 Err(e) => {
-                    println!("Connection error: {:?}", e);
+                    println!("Connection error {:?}", e);
                     connected_clone.store(false, Ordering::Relaxed);
                     sleep(Duration::from_secs(1)).await;
                 }
@@ -89,14 +98,14 @@ async fn main() {
 
         while start.elapsed().as_secs() < exec_time {
 
-            if let Err(e) =
-                client.publish("test", QoS::AtLeastOnce, false, payload.clone()).await
+            match client
+                .publish("test", QoS::AtLeastOnce, false, payload.clone())
+                .await
             {
-                println!("Publish error {:?}", e);
-                continue;
+                Ok(_) => sent += 1,
+                Err(e) => println!("Publish error {:?}", e),
             }
 
-            sent += 1;
             sleep(delay).await;
         }
 
