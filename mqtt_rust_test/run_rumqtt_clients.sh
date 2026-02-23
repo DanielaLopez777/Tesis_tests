@@ -6,7 +6,7 @@ PAYLOAD=$3
 EXEC_TIME=$4
 FREQ=$5
 
-CLIENT_BIN="target/release/rumqtt_client"
+CLIENT_BIN="target/release/mqtt_rust_test"
 
 SUB_PIDS=()
 PUB_PIDS=()
