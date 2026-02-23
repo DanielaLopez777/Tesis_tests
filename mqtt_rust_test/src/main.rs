@@ -1,6 +1,10 @@
-use rumqttc::{AsyncClient, MqttOptions, QoS, Event, Packet};
+use rumqttc::{AsyncClient, Event, MqttOptions, Packet, QoS};
 use std::{env, time::{Duration, Instant}};
-use tokio::time::sleep;
+use tokio::{task, time::sleep};
+use std::sync::{
+    Arc,
+    atomic::{AtomicBool, Ordering},
+};
 
 #[tokio::main]
 async fn main() {
@@ -10,32 +14,65 @@ async fn main() {
     let mode = &args[1];
     let id = &args[2];
 
-    let mut mqttoptions =
-        MqttOptions::new(format!("client-{}", id), "localhost", 1883);
+    // ======================
+    // MQTT OPTIONS
+    // ======================
 
-    mqttoptions.set_keep_alive(Duration::from_secs(60));
+    let mut mqttoptions =
+        MqttOptions::new(format!("client-{}", id), "192.158.100.10", 1883);
+
+    mqttoptions.set_keep_alive(Duration::from_secs(30));
 
     let (client, mut eventloop) = AsyncClient::new(mqttoptions, 10);
 
-    // =====================================================
+    let connected = Arc::new(AtomicBool::new(false));
+    let connected_clone = connected.clone();
+
+    // ======================
+    // EVENT LOOP (OBLIGATORIO)
+    // ======================
+
+    task::spawn(async move {
+        loop {
+            match eventloop.poll().await {
+                Ok(Event::Incoming(Packet::ConnAck(_))) => {
+                    println!("Client {} connected", id);
+                    connected_clone.store(true, Ordering::Relaxed);
+                }
+                Ok(_) => {}
+                Err(e) => {
+                    println!("Connection error: {:?}", e);
+                    connected_clone.store(false, Ordering::Relaxed);
+                    sleep(Duration::from_secs(1)).await;
+                }
+            }
+        }
+    });
+
+    // esperar conexión real
+    while !connected.load(Ordering::Relaxed) {
+        sleep(Duration::from_millis(100)).await;
+    }
+
+    // ======================
     // SUBSCRIBER
-    // =====================================================
+    // ======================
+
     if mode == "sub" {
 
         client.subscribe("test", QoS::AtLeastOnce).await.unwrap();
 
+        println!("Subscriber {} running", id);
+
         loop {
-            match eventloop.poll().await {
-                Ok(Event::Incoming(Packet::Publish(_))) => {}
-                Ok(_) => {}
-                Err(_) => break,
-            }
+            sleep(Duration::from_secs(60)).await;
         }
     }
 
-    // =====================================================
+    // ======================
     // PUBLISHER
-    // =====================================================
+    // ======================
+
     if mode == "pub" {
 
         let payload_size: usize = args[3].parse().unwrap();
@@ -45,33 +82,24 @@ async fn main() {
         let payload = vec![b'a'; payload_size];
         let delay = Duration::from_secs_f64(freq);
 
-        // 🔥 EVENTLOOP EN BACKGROUND (OBLIGATORIO)
-        tokio::spawn(async move {
-            loop {
-                let _ = eventloop.poll().await;
-            }
-        });
-
         let start = Instant::now();
-        let mut message_count = 0u64;
+        let mut sent = 0;
+
+        println!("Publisher {} started", id);
 
         while start.elapsed().as_secs() < exec_time {
 
-            client
-                .publish("test", QoS::AtLeastOnce, false, payload.clone())
-                .await
-                .unwrap();
+            if let Err(e) =
+                client.publish("test", QoS::AtLeastOnce, false, payload.clone()).await
+            {
+                println!("Publish error {:?}", e);
+                continue;
+            }
 
-            message_count += 1;
-
+            sent += 1;
             sleep(delay).await;
         }
 
-        // ✅ OUTPUT PARA THROUGHPUT
-        println!("Total messages sent: {}", message_count);
-
-        client.disconnect().await.unwrap();
-
-        std::process::exit(0);
+        println!("Publisher {} sent {}", id, sent);
     }
 }
