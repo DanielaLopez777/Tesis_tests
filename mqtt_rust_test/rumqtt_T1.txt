@@ -1,0 +1,15 @@
+Starting subscribers...
+Starting publishers...
+Waiting publishers...
+Total messages sent: 101167
+Total messages sent: 101573
+Total messages sent: 102108
+Total messages sent: 101743
+Total messages sent: 101880
+Total messages sent: 103291
+Total messages sent: 101029
+Total messages sent: 101121
+Total messages sent: 101117
+Total messages sent: 101976
+Stopping subscribers...
+Test finished.

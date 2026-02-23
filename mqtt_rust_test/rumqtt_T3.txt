@@ -1,0 +1,35 @@
+Starting subscribers...
+Starting publishers...
+Waiting publishers...
+Total messages sent: 77535
+Total messages sent: 76843
+Total messages sent: 75607
+Total messages sent: 75773
+Total messages sent: 79978
+Total messages sent: 79872
+Total messages sent: 81083
+Total messages sent: 77496
+Total messages sent: 80450
+Total messages sent: 76967
+Total messages sent: 77121
+Total messages sent: 76611
+Total messages sent: 81038
+Total messages sent: 80874
+Total messages sent: 80712
+Total messages sent: 75487
+Total messages sent: 75492
+Total messages sent: 80622
+Total messages sent: 81104
+Total messages sent: 80220
+Total messages sent: 81342
+Total messages sent: 79958
+Total messages sent: 80439
+Total messages sent: 80314
+Total messages sent: 80618
+Total messages sent: 79897
+Total messages sent: 80274
+Total messages sent: 80108
+Total messages sent: 80239
+Total messages sent: 80020
+Stopping subscribers...
+Test finished.
