@@ -1,129 +1,109 @@
-use rumqttc::{AsyncClient, MqttOptions, QoS, Event, Packet};
-use std::{
-    env,
-    time::{Duration, Instant},
-};
-use tokio::time::sleep;
+use rumqttc::{AsyncClient, Event, MqttOptions, Packet, QoS};
+use tokio::time::{sleep, timeout, Duration, Instant};
+use std::process;
 
 #[tokio::main]
 async fn main() {
 
-    let args: Vec<String> = env::args().collect();
+    println!("Iniciando cliente MQTT...");
 
-    let mode = &args[1];
-    let id = &args[2];
-
-    // BROKER REAL
-    let client_id = format!("{}-{}", mode, id);
-
+    // ===============================
+    // CONFIGURACIÓN DEL BROKER
+    // ===============================
     let mut mqttoptions =
-        MqttOptions::new(client_id, "192.168.100.10", 1883);
-    mqttoptions.set_keep_alive(Duration::from_secs(60));
+        MqttOptions::new("cliente_rumqtt", "192.168.100.10", 1883);
 
+    mqttoptions.set_keep_alive(Duration::from_secs(5));
+
+    // Buffer interno
     let (client, mut eventloop) = AsyncClient::new(mqttoptions, 10);
 
-    println!("Client {} connecting to broker...", id);
+    // ===============================
+    // INTENTO DE CONEXIÓN CON TIMEOUT
+    // ===============================
+    println!("Intentando conectar...");
 
-    // =====================================================
-    // INTENTO ÚNICO DE CONEXIÓN
-    // =====================================================
+    let conexion = timeout(Duration::from_secs(3), eventloop.poll()).await;
 
-    let mut connected = false;
+    match conexion {
+        Ok(Ok(Event::Incoming(Packet::ConnAck(_)))) => {
+            println!("✅ Conectado al broker");
+        }
+        Ok(Ok(_)) => {
+            println!("⚠ Evento inesperado");
+        }
+        Ok(Err(e)) => {
+            eprintln!("❌ Error de conexión: {:?}", e);
+            process::exit(1);
+        }
+        Err(_) => {
+            eprintln!("❌ Timeout: No se pudo conectar al broker");
+            process::exit(1);
+        }
+    }
 
-    // solo intentamos unos cuantos polls
-    for _ in 0..5 {
-        match eventloop.poll().await {
+    // ===============================
+    // CONTADORES
+    // ===============================
+    let inicio = Instant::now();
+    let mut mensajes_enviados = 0u64;
 
-            Ok(Event::Incoming(Packet::ConnAck(_))) => {
-                connected = true;
-                println!("Client {} connected!", id);
-                break;
+    // ===============================
+    // LOOP PRINCIPAL
+    // ===============================
+    for i in 1..=10 {
+
+        let payload = format!("Mensaje {}", i);
+
+        match client.publish(
+            "test/topic",
+            QoS::AtLeastOnce,
+            false,
+            payload
+        ).await {
+            Ok(_) => {
+                mensajes_enviados += 1;
+                println!("📤 Mensaje enviado {}", mensajes_enviados);
             }
-
-            Ok(_) => {}
-
             Err(e) => {
-                println!("Client {} connection error: {}", id, e);
+                eprintln!("❌ Error publicando: {:?}", e);
                 break;
             }
         }
 
-        sleep(Duration::from_millis(500)).await;
-    }
-
-    // si no conecta → terminar
-    if !connected {
-        println!("Client {} could NOT connect to broker.", id);
-        std::process::exit(1);
-    }
-
-    // =====================================================
-    // SUBSCRIBER
-    // =====================================================
-    if mode == "sub" {
-
-        client.subscribe("test", QoS::AtLeastOnce)
-            .await
-            .unwrap();
-
-        loop {
-            match eventloop.poll().await {
-                Ok(Event::Incoming(Packet::Publish(_))) => {}
-                Ok(_) => {}
-                Err(e) => {
-                    println!("Subscriber {} disconnected: {}", id, e);
-                    break;
-                }
+        // Procesar eventos MQTT
+        match eventloop.poll().await {
+            Ok(Event::Incoming(Packet::PubAck(_))) => {
+                println!("✔ ACK recibido");
             }
-        }
-    }
-
-    // =====================================================
-    // PUBLISHER
-    // =====================================================
-    if mode == "pub" {
-
-        let payload_size: usize = args[3].parse().unwrap();
-        let exec_time: u64 = args[4].parse().unwrap();
-        let freq: f64 = args[5].parse().unwrap();
-
-        let payload = vec![b'a'; payload_size];
-        let delay = Duration::from_secs_f64(freq);
-
-        // EVENTLOOP EN BACKGROUND
-        tokio::spawn(async move {
-            loop {
-                if let Err(e) = eventloop.poll().await {
-                    println!("Publisher eventloop error: {}", e);
-                    break;
-                }
-            }
-        });
-
-        let start = Instant::now();
-        let mut message_count = 0u64;
-
-        while start.elapsed().as_secs() < exec_time {
-
-            if let Err(e) = client.publish(
-                "test",
-                QoS::AtLeastOnce,
-                false,
-                payload.clone(),
-            ).await {
-                println!("Publish failed: {}", e);
+            Ok(_) => {}
+            Err(e) => {
+                eprintln!("❌ Conexión perdida: {:?}", e);
                 break;
             }
-
-            message_count += 1;
-
-            sleep(delay).await;
         }
 
-        println!("Total messages sent: {}", message_count);
-
-        client.disconnect().await.ok();
-
-        std::process::exit(0);
+        sleep(Duration::from_secs(1)).await;
     }
+
+    // ===============================
+    // ESTADÍSTICAS
+    // ===============================
+    let tiempo_total = inicio.elapsed().as_secs_f64();
+
+    println!("\n========== RESUMEN ==========");
+    println!("Mensajes enviados : {}", mensajes_enviados);
+    println!("Tiempo total      : {:.2} s", tiempo_total);
+    println!(
+        "Mensajes/segundo  : {:.2}",
+        mensajes_enviados as f64 / tiempo_total
+    );
+
+    // ===============================
+    // CIERRE LIMPIO MQTT
+    // ===============================
+    println!("Cerrando conexión MQTT...");
+    client.disconnect().await.unwrap();
+
+    println!("✅ Cliente finalizado correctamente");
 }
