@@ -122,7 +122,7 @@ async fn main() {
 
         println!("Total messages sent: {}", message_count);
 
-        client.disconnect().await?;
+        client.disconnect().await.ok();
 
         std::process::exit(0);
     }
