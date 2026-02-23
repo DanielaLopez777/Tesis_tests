@@ -19,7 +19,7 @@ async fn main() {
 
     let (client, mut eventloop) = AsyncClient::new(mqttoptions, 10);
 
-    println!("Client {} connecting...", id);
+    println!("Client {} starting...", id);
 
     let mut connected = false;
 
@@ -31,23 +31,32 @@ async fn main() {
         loop {
             match eventloop.poll().await {
 
-                Ok(Event::Incoming(Packet::ConnAck(_))) => {
-                    println!("Subscriber {} connected", id);
-                    connected = true;
+                // ✅ CONEXIÓN REAL MQTT
+                Ok(Event::Incoming(Packet::ConnAck(ack))) => {
+                    if ack.code == rumqttc::ConnectReturnCode::Success {
+                        println!("Subscriber {} REAL CONNECTED", id);
+                        connected = true;
 
-                    client.subscribe("test", QoS::AtLeastOnce)
-                        .await
-                        .unwrap();
+                        client.subscribe("test", QoS::AtLeastOnce)
+                            .await
+                            .unwrap();
+                    }
                 }
 
                 Ok(Event::Incoming(Packet::Publish(_))) => {}
 
                 Ok(_) => {}
 
+                // AQUÍ SE DETECTA BROKER APAGADO
                 Err(e) => {
-                    println!("Subscriber {} error: {}", id, e);
+                    if connected {
+                        println!("Subscriber {} lost connection: {}", id, e);
+                    } else {
+                        println!("Subscriber {} waiting broker...", id);
+                    }
+
                     connected = false;
-                    sleep(Duration::from_secs(1)).await;
+                    sleep(Duration::from_secs(2)).await;
                 }
             }
         }
@@ -70,25 +79,26 @@ async fn main() {
 
         loop {
 
-            // 🔥 MQTT REAL SUCEDE AQUÍ
             match eventloop.poll().await {
 
-                Ok(Event::Incoming(Packet::ConnAck(_))) => {
-                    println!("Publisher {} connected", id);
-                    connected = true;
+                Ok(Event::Incoming(Packet::ConnAck(ack))) => {
+                    if ack.code == rumqttc::ConnectReturnCode::Success {
+                        println!("Publisher {} REAL CONNECTED", id);
+                        connected = true;
+                    }
                 }
 
                 Ok(_) => {}
 
                 Err(e) => {
-                    println!("Publisher {} disconnected: {}", id, e);
                     connected = false;
-                    sleep(Duration::from_secs(1)).await;
+                    println!("Publisher {} waiting broker... {}", id, e);
+                    sleep(Duration::from_secs(2)).await;
                     continue;
                 }
             }
 
-            // ✅ SOLO PUBLICA SI EXISTE CONEXIÓN REAL
+            // SOLO PUBLICA SI HAY CONEXIÓN REAL
             if connected && start.elapsed().as_secs() < exec_time {
 
                 if let Err(e) = client.publish(
@@ -97,7 +107,7 @@ async fn main() {
                     false,
                     payload.clone(),
                 ).await {
-                    println!("Publish error: {}", e);
+                    println!("Publish failed: {}", e);
                     connected = false;
                 } else {
                     message_count += 1;
