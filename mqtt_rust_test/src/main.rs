@@ -45,17 +45,16 @@ async fn main() {
         let payload = vec![b'a'; payload_size];
         let delay = Duration::from_secs_f64(freq);
 
-        let start = Instant::now();
-
-        // EVENTLOOP EN THREAD SEPARADO (CLAVE)
-        let mut ev = eventloop;
+        // 🔥 EVENTLOOP EN BACKGROUND (OBLIGATORIO)
         tokio::spawn(async move {
             loop {
-                let _ = ev.poll().await;
+                let _ = eventloop.poll().await;
             }
         });
 
-        // PUBLICACIÓN CONTROLADA
+        let start = Instant::now();
+        let mut message_count = 0u64;
+
         while start.elapsed().as_secs() < exec_time {
 
             client
@@ -63,10 +62,14 @@ async fn main() {
                 .await
                 .unwrap();
 
+            message_count += 1;
+
             sleep(delay).await;
         }
 
-        println!("Publisher finished");
+        // ✅ OUTPUT PARA THROUGHPUT
+        println!("Total messages sent: {}", message_count);
+
         client.disconnect().await.unwrap();
 
         std::process::exit(0);
