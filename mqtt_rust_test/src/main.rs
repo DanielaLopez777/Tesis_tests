@@ -13,10 +13,11 @@ async fn main() {
     let mode = &args[1];
     let id = &args[2];
 
-    // ✅ BROKER REAL
-    let mut mqttoptions =
-        MqttOptions::new(format!("client-{}", id), "192.168.100.10", 1883);
+    // BROKER REAL
+    let client_id = format!("{}-{}", mode, id);
 
+    let mut mqttoptions =
+        MqttOptions::new(client_id, "192.168.100.10", 1883);
     mqttoptions.set_keep_alive(Duration::from_secs(60));
 
     let (client, mut eventloop) = AsyncClient::new(mqttoptions, 10);
@@ -50,7 +51,7 @@ async fn main() {
         sleep(Duration::from_millis(500)).await;
     }
 
-    // ❌ si no conecta → terminar
+    // si no conecta → terminar
     if !connected {
         println!("Client {} could NOT connect to broker.", id);
         std::process::exit(1);
@@ -89,7 +90,7 @@ async fn main() {
         let payload = vec![b'a'; payload_size];
         let delay = Duration::from_secs_f64(freq);
 
-        // 🔥 EVENTLOOP EN BACKGROUND
+        // EVENTLOOP EN BACKGROUND
         tokio::spawn(async move {
             loop {
                 if let Err(e) = eventloop.poll().await {
