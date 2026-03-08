@@ -6,7 +6,7 @@ PAYLOAD=$3
 EXEC_TIME=$4
 FREQ=$5
 
-CLIENT_PATH="../C_Mosquitto"
+CLIENT_PATH="."
 CLIENT_BIN="$CLIENT_PATH/client"
 
 echo "Compiling..."
