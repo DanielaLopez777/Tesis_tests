@@ -1,0 +1,32 @@
+Compiling...
+Starting subscribers...
+Starting publishers...
+Waiting publishers to finish...
+Publisher 2 sent 84133 messages
+Publisher 8 sent 84176 messages
+Publisher 10 sent 83968 messages
+Publisher 9 sent 84133 messages
+Publisher 6 sent 84160 messages
+Publisher 17 sent 84214 messages
+Publisher 16 sent 84173 messages
+Publisher 23 sent 84044 messages
+Publisher 1 sent 84065 messages
+Publisher 14 sent 84288 messages
+Publisher 11 sent 84154 messages
+Publisher 5 sent 83961 messages
+Publisher 18 sent 84020 messages
+Publisher 24 sent 84032 messages
+Publisher 20 sent 84212 messages
+Publisher 12 sent 84025 messages
+Publisher 21 sent 84024 messages
+Publisher 3 sent 84161 messages
+Publisher 0 sent 83752 messages
+Publisher 13 sent 84022 messages
+Publisher 4 sent 84134 messages
+Publisher 15 sent 83981 messages
+Publisher 7 sent 84032 messages
+Publisher 19 sent 83882 messages
+Publisher 22 sent 84094 messages
+Publishers finished.
+Stopping subscribers...
+Test finished successfully.
