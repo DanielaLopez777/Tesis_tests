@@ -1,0 +1,57 @@
+Compiling...
+Starting subscribers...
+Starting publishers...
+Waiting publishers to finish...
+Publisher 32 sent 85896 messages
+Publisher 2 sent 85787 messages
+Publisher 21 sent 86036 messages
+Publisher 3 sent 85943 messages
+Publisher 5 sent 85781 messages
+Publisher 10 sent 85983 messages
+Publisher 29 sent 85865 messages
+Publisher 25 sent 85723 messages
+Publisher 47 sent 85627 messages
+Publisher 45 sent 85841 messages
+Publisher 11 sent 85677 messages
+Publisher 12 sent 86011 messages
+Publisher 42 sent 85741 messages
+Publisher 48 sent 85957 messages
+Publisher 46 sent 85775 messages
+Publisher 30 sent 85734 messages
+Publisher 17 sent 86020 messages
+Publisher 44 sent 85788 messages
+Publisher 39 sent 85705 messages
+Publisher 1 sent 85809 messages
+Publisher 9 sent 85992 messages
+Publisher 37 sent 85729 messages
+Publisher 6 sent 86004 messages
+Publisher 40 sent 85740 messages
+Publisher 31 sent 85905 messages
+Publisher 20 sent 85838 messages
+Publisher 28 sent 85814 messages
+Publisher 36 sent 85815 messages
+Publisher 24 sent 85776 messages
+Publisher 14 sent 85889 messages
+Publisher 23 sent 85912 messages
+Publisher 27 sent 85816 messages
+Publisher 43 sent 85755 messages
+Publisher 4 sent 86016 messages
+Publisher 18 sent 86208 messages
+Publisher 16 sent 85923 messages
+Publisher 15 sent 85865 messages
+Publisher 38 sent 85777 messages
+Publisher 34 sent 85674 messages
+Publisher 7 sent 85887 messages
+Publisher 0 sent 85837 messages
+Publisher 33 sent 86001 messages
+Publisher 26 sent 85967 messages
+Publisher 49 sent 85812 messages
+Publisher 22 sent 85734 messages
+Publisher 35 sent 85779 messages
+Publisher 41 sent 85610 messages
+Publisher 13 sent 85959 messages
+Publisher 8 sent 85772 messages
+Publisher 19 sent 86006 messages
+Publishers finished.
+Stopping subscribers...
+Test finished successfully.
